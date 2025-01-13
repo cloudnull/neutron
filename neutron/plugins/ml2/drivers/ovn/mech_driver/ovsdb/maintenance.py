@@ -1001,10 +1001,14 @@ class DBInconsistenciesPeriodics(SchemaAwarePeriodicsBase):
         for ls in self._nb_idl.ls_list().execute(check_error=True):
             if ovn_const.OVN_NETTYPE_EXT_ID_KEY not in ls.external_ids:
                 net_id = utils.get_neutron_name(ls.name)
-                external_ids = {
-                    ovn_const.OVN_NETTYPE_EXT_ID_KEY: net_segments[net_id]}
-                cmds.append(self._nb_idl.db_set(
-                    'Logical_Switch', ls.uuid, ('external_ids', external_ids)))
+                try:
+                    external_ids = {
+                        ovn_const.OVN_NETTYPE_EXT_ID_KEY: net_segments[net_id]}
+                except KeyError:
+                    LOG.debug("Net id %s not a managed segment", net_id)
+                else:
+                    cmds.append(self._nb_idl.db_set(
+                        'Logical_Switch', ls.uuid, ('external_ids', external_ids)))
 
         if cmds:
             with self._nb_idl.transaction(check_error=True) as txn:
